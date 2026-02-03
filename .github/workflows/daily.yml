@@ -1,0 +1,54 @@
+name: Daily Investment Analyst
+
+on:
+  schedule:
+    - cron: '0 8 * * *' # Run at 8:00 AM daily
+  workflow_dispatch: # Allow manual trigger
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  analyze_and_report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Investment Analyst
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          SERPER_API_KEY: ${{ secrets.SERPER_API_KEY }}
+        run: python main.py
+
+      - name: Create Pull Request
+        id: cpr
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore: daily investment analysis update"
+          title: "📈 Daily Investment Analysis Report"
+          body: |
+            Daily analysis for tracked investments.
+            
+            - Generated via Gemini & Serper.
+          branch: "daily-analysis"
+          branch-suffix: timestamp
+          delete-branch: true
+
+      - name: Auto-merge
+        if: steps.cpr.outputs.pull-request-operation == 'created'
+        run: gh pr merge "${{ steps.cpr.outputs.pull-request-number }}" --merge --auto
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

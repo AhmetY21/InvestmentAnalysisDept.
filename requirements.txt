@@ -1,0 +1,10 @@
+google-genai
+httpx
+beautifulsoup4
+lxml
+pydantic
+python-dotenv
+fake-useragent
+pytrends
+pandas
+markdown
